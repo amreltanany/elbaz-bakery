@@ -173,6 +173,7 @@ input:focus-visible,textarea:focus-visible{outline:0;box-shadow:inset 0 0 0 2px 
 #items{display:grid;gap:10px}#items[hidden]{display:none}
 #checkout{display:grid;gap:10px}#checkout[hidden],form[hidden],#done[hidden],.cfoot[hidden]{display:none}
 .hint{color:var(--mute);font-size:14.5px}
+.static [data-api]{display:none!important} /* no server (GitHub Pages): no tracking or accounts */
 .err{color:var(--red-d);font-weight:700;font-size:14.5px}.err:empty{display:none}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}.two .btn{padding:0 10px}
 #who{display:flex;justify-content:space-between;align-items:center;gap:8px}#who[hidden]{display:none}
@@ -240,7 +241,7 @@ html.loading,html.loading body{overflow:hidden}
   var nav=performance.getEntriesByType&&performance.getEntriesByType("navigation")[0];
   var fresh=!nav||nav.type==="navigate";                                 // not reload / back_forward
   var internal=document.referrer&&document.referrer.indexOf(location.origin)===0; // came from our own site
-  var home=location.pathname==="/"||location.pathname==="/index.html";
+  var home=/\/(index\.html)?$/.test(location.pathname);                // "/" here, "/elbaz-bakery/" on GitHub Pages
   if(!d.classList.contains("reduce-motion")&&(force||(home&&fresh&&!internal))){d.classList.add("loading");setTimeout(function(){d.classList.remove("loading")},3400)}
 }catch(e){}})();
 </script>
@@ -255,7 +256,7 @@ html.loading,html.loading body{overflow:hidden}
 <header class="site-header" id="hd">
   <div class="site-header__bar">
     <nav class="nav" id="nav" aria-label="القائمة الرئيسية">
-      <a href="#menu">المنيو</a><a href="#track">تابع طلبك</a><a href="#about">زورنا</a><a href="#support">الدعم</a>
+      <a href="#menu">المنيو</a><a href="#track" data-api>تابع طلبك</a><a href="#about">زورنا</a><a href="#support">الدعم</a>
     </nav>
     <a class="brand" href="#top" aria-label="مخبز الباز - الرئيسية"><img src="img/logo.png" alt="" width="640" height="571">مخبز الباز</a>
     <div class="ctrls">
@@ -278,7 +279,7 @@ html.loading,html.loading body{overflow:hidden}
     <span class="tag" id="openTxt"></span>
     <h1>طازة من الفرن<br><span>لحد باب بيتك</span></h1>
     <p>عيش وكرواسون وحلويات بنخبزها كل يوم الصبح. اختار اللي نفسك فيه واطلب في دقيقة، وتابع طلبك برقم موبايلك.</p>
-    <div class="row"><a class="btn btn-red" href="#menu">اطلب دلوقتي</a><a class="btn btn-line" href="#track">تابع طلبك</a></div>
+    <div class="row"><a class="btn btn-red" href="#menu">اطلب دلوقتي</a><a class="btn btn-line" href="#track" data-api>تابع طلبك</a></div>
   </div>
 </section>
 
@@ -298,7 +299,7 @@ html.loading,html.loading body{overflow:hidden}
   </div>
 </section>
 
-<section id="track">
+<section id="track" data-api>
   <div class="wrap">
     <h2 data-r>تابع طلبك</h2>
     <p class="hint" data-r>اكتب رقم الموبايل اللي طلبت بيه.</p>
@@ -346,7 +347,7 @@ html.loading,html.loading body{overflow:hidden}
   <div class="cbody" data-lenis-prevent>
     <div id="items"></div>
     <div id="checkout">
-      <div class="seg" role="group" aria-label="طريقة الطلب"><button type="button" data-mode="guest">اطلب كضيف</button><button type="button" data-mode="acct">اطلب بحسابي</button></div>
+      <div class="seg" data-api role="group" aria-label="طريقة الطلب"><button type="button" data-mode="guest">اطلب كضيف</button><button type="button" data-mode="acct">اطلب بحسابي</button></div>
       <form id="auth" hidden>
         <p class="hint">ادخل بحسابك أو اعمل حساب جديد، وبياناتك تتحفظ لكل طلب.</p>
         <label>رقم الموبايل<input name="phone" type="tel" inputmode="numeric" required placeholder="01xxxxxxxxx" autocomplete="tel"></label>
@@ -366,7 +367,7 @@ html.loading,html.loading body{overflow:hidden}
       <span class="ok" aria-hidden="true">✓</span>
       <h3>تم استلام طلبك</h3>
       <p id="doneTxt"></p>
-      <button class="btn btn-red" type="button" data-track>تابع طلبك</button>
+      <button class="btn btn-red" type="button" data-track data-api>تابع طلبك</button>
     </div>
   </div>
   <div class="cfoot" id="cfoot">

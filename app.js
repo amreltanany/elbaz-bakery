@@ -7,7 +7,7 @@ async function api(url,body){
   const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'حصل خطأ، جرّب تاني');return j;
 }
 const STATUS={new:'اتسجّل',prep:'بيتجهز',out:'في الطريق',done:'اتسلّم'},STEPS=Object.keys(STATUS);
-const dlg=$('#cart');let DELIVERY=0,P=[],byId={},cart=store.get('baz-cart')||{},me=null,mode=store.get('baz-mode')==='acct'?'acct':'guest',lenis;
+const dlg=$('#cart');let DELIVERY=0,P=[],byId={},cart=store.get('baz-cart')||{},me=null,STATIC=false,mode=store.get('baz-mode')==='acct'?'acct':'guest',lenis;
 
 const ctl=id=>cart[id]
   ?`<div class="step"><button type="button" data-inc="${id}" aria-label="زوّد ${byId[id].n}">+</button><span aria-live="polite">${num(cart[id])}</span><button type="button" data-dec="${id}" aria-label="قلّل ${byId[id].n}">−</button></div>`
@@ -98,7 +98,18 @@ $('#auth').onsubmit=async e=>{
   catch(x){err(x.message)}
 };
 $('#ord').onsubmit=async e=>{
-  e.preventDefault();const f=e.target,btn=$('#send');err();btn.disabled=true;
+  e.preventDefault();const f=e.target,btn=$('#send');err();
+  if(STATIC){
+    const ids=Object.keys(cart);if(!ids.length)return err('السلة فاضية');
+    const sub=ids.reduce((s,i)=>s+cart[i]*byId[i].p,0),v=k=>f[k].value.trim();
+    const msg=['طلب جديد من الموقع',...ids.map(i=>`${cart[i]} × ${byId[i].n}`),`التوصيل: ${DELIVERY} ج.م`,`الإجمالي: ${sub+DELIVERY} ج.م (الدفع عند الاستلام)`,'',`الاسم: ${v('name')}`,`الموبايل: ${v('phone')}`,`العنوان: ${v('addr')}`,v('note')?`ملاحظات: ${v('note')}`:null].filter(l=>l!==null).join('\n');
+    const wa='https://wa.me/201119708154?text='+encodeURIComponent(msg);window.open(wa,'_blank');
+    store.set('baz-guest',{name:v('name'),address:v('addr'),phone:v('phone')});f.note.value='';
+    $('#done h3').textContent='كمّل طلبك على واتساب';
+    $('#doneTxt').innerHTML=`الإجمالي ${egp(sub+DELIVERY)} شامل ${egp(DELIVERY)} توصيل. لو واتساب ما اتفتحش <a href="${wa}" target="_blank" rel="noopener">دوس هنا</a> وابعت الرسالة.`;
+    $('#done').hidden=false;cart={};sync();return;
+  }
+  btn.disabled=true;
   try{
     const o=await api('/api/orders',{items:cart,name:f.name.value,phone:f.phone.value,address:f.addr.value,note:f.note.value});
     if(mode==='acct'&&me)me={...me,name:f.name.value.trim(),address:f.addr.value.trim()};
@@ -131,13 +142,16 @@ $('#tform').onsubmit=e=>{e.preventDefault();track()};
 
 (async()=>{
   try{[P,{user:me},{delivery:DELIVERY}]=await Promise.all([api('/api/products'),api('/api/me'),api('/api/config')])}
-  catch(x){$('#grid').innerHTML=`<p class="err">${x.message}</p>`;return}
+  catch(x){ // no server (GitHub Pages): menu from products.json, orders go out by WhatsApp
+    try{P=await(await fetch('products.json')).json();STATIC=true;DELIVERY=30;me=null;mode='guest';document.documentElement.classList.add('static')}
+    catch(e){$('#grid').innerHTML=`<p class="err">${x.message}</p>`;return}
+  }
   byId=Object.fromEntries(P.map(p=>[p.id,p]));
   for(const k in cart)if(!byId[k]||!(cart[k]>0))delete cart[k];
   $('#grid').innerHTML=P.map(p=>`<article class="card" data-c="${p.c}"><div class="ph reveal"><img class="${p.fit||''}" src="${p.img}" alt="${p.n}" loading="lazy"></div><h3>${p.n}</h3><p>${p.d}</p><span class="price">${egp(p.p)}</span><div class="ctl" data-ctl="${p.id}"></div></article>`).join('');
   $('#cats').innerHTML=['الكل',...new Set(P.map(p=>p.c))].map((c,i)=>`<button class="cat" aria-pressed="${!i}" data-cat="${c}">${c}</button>`).join('');
   fill();sync();
-  const last=store.get('baz-phone');if(last){$('#tform').phone.value=last;track()}
+  const last=store.get('baz-phone');if(last&&!STATIC){$('#tform').phone.value=last;track()}
 
   const h=new Date().getHours(),isOpen=h>=CONFIG.open&&h<CONFIG.close;
   $('#openTxt').textContent=isOpen?'مفتوح دلوقتي':'مقفول دلوقتي';$('#openTxt').classList.toggle('open',isOpen);
