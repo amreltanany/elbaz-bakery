@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>طلبات مخبز الباز</title>
+<link rel="icon" href="img/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#FFF7EC;color:#1E1411;font:400 16px/1.6 'Tajawal',Tahoma,sans-serif;padding:16px;max-width:720px;margin:0 auto}
+h1{font:400 30px 'Lalezar',Tahoma;display:flex;align-items:center;gap:10px;margin-bottom:12px}h1 img{height:48px}
+button{font:inherit;cursor:pointer;border:0;min-height:44px;padding:0 16px;border-radius:999px;font-weight:700;background:#fff;color:#1E1411;box-shadow:inset 0 0 0 1px rgba(30,20,17,.15)}
+button[aria-pressed=true]{background:#E63A1E;color:#fff;box-shadow:none}
+input{font:inherit;width:100%;padding:12px 14px;border:0;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px rgba(30,20,17,.15);margin:6px 0 10px}
+:focus-visible{outline:3px solid #1E1411;outline-offset:2px}
+.o{background:#fff;border-radius:18px;padding:14px 16px;margin-bottom:12px;display:grid;gap:6px;box-shadow:inset 0 0 0 1px rgba(30,20,17,.12)}
+.o.fin{opacity:.6}
+.h{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.h b{font:400 24px 'Lalezar',Tahoma}
+.m{color:rgba(30,20,17,.62);font-size:14.5px}
+.t{font-weight:700;color:#C22C13}
+.s{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+a{color:inherit;font-weight:700}
+#err{color:#C22C13;font-weight:700}
+</style>
+</head>
+<body>
+<h1><img src="img/logo.png" alt="">طلبات المخبز</h1>
+<form id="lock"><label for="k">كلمة سر الإدارة</label><input id="k" type="password" required autocomplete="current-password"><button>دخول</button></form>
+<p id="err" role="alert"></p>
+<div id="list" aria-live="polite"></div>
+<script>
+const S={new:'جديد',prep:'بيتجهز',out:'في الطريق',done:'اتسلّم',cancel:'ملغي'},$=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';'),num=x=>Number(x).toLocaleString('ar-EG');
+let key=sessionStorage.getItem('baz-admin')||'';
+async function call(url,body){
+  const r=await fetch(url,{method:body?'POST':'GET',headers:{'x-admin-key':key,...(body&&{'Content-Type':'application/json'})},body:body&&JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));if(!r.ok){if(r.status===401){key='';sessionStorage.removeItem('baz-admin');$('#lock').hidden=false;$('#list').innerHTML=''}throw Error(j.error||'حصل خطأ')}return j;
+}
+async function load(){
+  if(!key)return;
+  try{
+    const {orders}=await call('/api/admin/orders');$('#lock').hidden=true;$('#err').textContent='';
+    $('#list').innerHTML=orders.length?orders.map(o=>`<article class="o ${o.status==='done'||o.status==='cancel'?'fin':''}">
+      <div class="h"><b>طلب ${num(o.id)}</b><span class="m">${new Date(o.created).toLocaleString('ar-EG',{dateStyle:'medium',timeStyle:'short'})}</span></div>
+      <p>${o.items.map(i=>`${num(i.q)} × ${esc(i.n)}`).join('، ')}</p><p class="t">${num(o.total)} ج.م${o.delivery?` <span class="m">(منها ${num(o.delivery)} توصيل)</span>`:''}</p>
+      <p>${esc(o.name)} · <a href="tel:${esc(o.phone)}" dir="ltr">${esc(o.phone)}</a></p><p class="m">${esc(o.address)}</p>${o.note?`<p class="m">ملاحظات: ${esc(o.note)}</p>`:''}
+      <div class="s" role="group" aria-label="حالة الطلب">${Object.keys(S).map(s=>`<button data-id="${o.id}" data-s="${s}" aria-pressed="${o.status===s}">${S[s]}</button>`).join('')}</div></article>`).join(''):'<p class="m">مفيش طلبات لسه.</p>';
+  }catch(e){$('#err').textContent=e.message}
+}
+$('#lock').onsubmit=e=>{e.preventDefault();key=$('#k').value;sessionStorage.setItem('baz-admin',key);$('#k').value='';load()};
+$('#list').onclick=async e=>{const b=e.target.closest('[data-s]');if(!b)return;try{await call('/api/admin/status',{id:+b.dataset.id,status:b.dataset.s});load()}catch(x){$('#err').textContent=x.message}};
+load();setInterval(load,20000);
+</script>
+</body>
+</html>

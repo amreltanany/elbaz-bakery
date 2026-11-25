@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>كود الطلب · مخبز الباز</title>
+<link rel="icon" href="img/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Tajawal:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#eee;color:#1E1411;font:500 18px/1.6 'Tajawal',Tahoma,sans-serif;padding:16px}
+.tools{max-width:210mm;margin:0 auto 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button{font:inherit;font-weight:700;cursor:pointer;border:0;min-height:46px;padding:0 26px;border-radius:999px;background:#E63A1E;color:#fff}
+:focus-visible{outline:3px solid #1E1411;outline-offset:2px}
+.tools small{color:#555;font-size:14px}
+.sheet{width:210mm;max-width:100%;aspect-ratio:210/297;margin:0 auto;background:#FFF7EC;border:6mm solid #E63A1E;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:10mm 12mm;text-align:center}
+.sheet img{width:48%;height:auto}
+h1{font:400 clamp(34px,9vw,72px)/1.1 'Lalezar',Tahoma}
+h1 span{color:#E63A1E}
+.sub{font-size:clamp(16px,3.4vw,26px);font-weight:700}
+#qr{width:58%;background:#fff;padding:4%;border-radius:6mm;box-shadow:0 0 0 1.5mm #1E1411}
+#qr svg{display:block;width:100%;height:auto}
+#url{font-size:clamp(13px,2.6vw,20px);font-weight:700;direction:ltr;word-break:break-all}
+@page{size:A4;margin:0}
+@media print{body{background:#fff;padding:0}.tools{display:none}.sheet{width:210mm;height:297mm;max-width:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<div class="tools"><button onclick="print()">اطبع الورقة</button><small>مقاس A4. الكود بيفتح العنوان المكتوب تحته، فلو عنوان الموقع اتغيّر اطبع ورقة جديدة.</small></div>
+<main class="sheet">
+  <img src="img/logo.png" alt="مخبز الباز">
+  <div><h1>اطلب <span>أونلاين</span></h1><p class="sub">افتح الكاميرا وامسح الكود</p></div>
+  <div id="qr" role="img" aria-label="كود QR لموقع المخبز"></div>
+  <p id="url"></p>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+// encodes this site's own address, so the page is always right for wherever the site is hosted (override with ?u=)
+const u=new URLSearchParams(location.search).get('u')||location.origin+'/';
+document.querySelector('#url').textContent=u.replace(/^https?:\/\//,'').replace(/\/$/,'');
+if(window.qrcode){const q=qrcode(0,'H');q.addData(u);q.make();document.querySelector('#qr').innerHTML=q.createSvgTag({cellSize:8,margin:0,scalable:true})}
+else document.querySelector('#qr').textContent='تعذّر تحميل مكتبة الكود، اتأكد من الإنترنت وحدّث الصفحة.';
+</script>
+</body>
+</html>
